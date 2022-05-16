@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import Entity from "./components/Entity.vue";
-import Interpreter from "./3rd/interpreter";
 
 const dragOver = function (e: DragEvent) {
   e.dataTransfer!.dropEffect = "move";
@@ -11,50 +10,48 @@ const dragOver = function (e: DragEvent) {
 var data = [
   {
     name: "e0",
-    height: 100,
-    width: 100,
+    height: 400,
+    width: 300,
     left: 100,
     top: 200,
-    value: {
-      value: "100",
-      expr: "",
-    },
+    value: "e0 的value数据",
+    data: [{ name: "name", value: "222", type: "const" }],
   },
   {
     name: "e1",
-    height: 100,
-    width: 100,
-    left: 300,
+    height: 400,
+    width: 300,
+    left: 800,
     top: 200,
-    value: {
-      value: "",
-      expr: "e1.value",
-    },
+    value: "e1的value数据",
+    data: [
+      {
+        name: "name",
+        value: "e0",
+        type: "expr",
+        compute: null,
+        up: ["e0.data.name"],
+      },
+    ],
   },
   {
     name: "e2",
-    height: 100,
-    width: 100,
-    left: 600,
+    height: 400,
+    width: 300,
+    left: 1200,
     top: 200,
-    value: {
-      value: "",
-      expr: "e1.value",
-    },
+    value: "e2的value数据22222222222",
+    data: [
+      {
+        name: "name",
+        value: "e0.data.name+e1.data.name",
+        type: "expr",
+        compute: null,
+        up: ["e0.data.name", "e1.data.name"],
+      },
+    ],
   },
 ];
-
-var interpreter = new Interpreter("e1.top+e0.top", function (
-  interpreter: any,
-  globalObject: any
-) {
-  data.forEach((e) => {
-    var entity = interpreter.nativeToPseudo(e);
-    interpreter.setProperty(globalObject, e.name, entity);
-  });
-});
-interpreter.run();
-console.log(interpreter.value);
 
 var entitys = ref(data);
 </script>

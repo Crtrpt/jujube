@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, watch, useAttrs } from "vue";
+import emitter from "../emitter";
+import evoluter from "../evoluter";
+
 const attrs = useAttrs();
-
 const topText = ref(0);
-
 const props = defineProps({
   width: Number,
   height: Number,
@@ -47,15 +48,38 @@ const dragend = function (e: DragEvent) {
     },
   });
 };
+
+var PseudoEntity = evoluter.nativeToPseudo(attrs.modelValue);
+evoluter.setProperty(
+  evoluter.globalObject,
+  attrs.modelValue.name,
+  PseudoEntity
+);
+
+const change = function (
+  e: Event,
+  entity: any,
+  k: String,
+  v: Object,
+  data: any,
+  idx: any
+) {
+  var code = k + "=" + v;
+
+  evoluter.appendCode(code);
+  evoluter.run();
+  console.log("虚拟环境中获取");
+  entity.data[idx].value = data.value;
+
+  var NativeEntity = evoluter.pseudoToNative(PseudoEntity);
+  NativeEntity.data[idx].value = data.value;
+  emit("update:modelValue", NativeEntity);
+};
 </script>
 
 <template>
   <div
-    draggable="true"
-    @dragstart="dragstart"
-    @drag="drag"
-    @dragend="dragend"
-    class="absolute border flex flex-col m-1 p-1"
+    class="absolute border-2 border-black flex flex-col m-1 p-1"
     :style="{
       width: $attrs.modelValue.width + 'px',
       height: $attrs.modelValue.height + 'px',
@@ -63,13 +87,49 @@ const dragend = function (e: DragEvent) {
       left: $attrs.modelValue.left + 'px',
     }"
   >
-    name:{{ $attrs.modelValue.name }} value:{{
-      $attrs.modelValue.value.value || "-"
-    }}
-    <input class="border m-1" v-model="$attrs.modelValue.value.value" />
-    <input class="border m-1" v-model="$attrs.modelValue.value.expr" />
+    name:{{ $attrs.modelValue.name }} value:{{ $attrs.modelValue.value }}
+    <div class="flex" v-for="(d, idx) in $attrs.modelValue.data" :key="d.name">
+      <div class="">
+        <input class="border border-black p-1 m-1 w-full" v-model="d.name" />
+        <input
+          class="border border-black p-1 m-1 w-full"
+          v-model="d.value"
+          @change="
+            change(
+              $event,
+              $attrs.modelValue,
+              $attrs.modelValue.name + '.data[' + idx + '].compute',
+              d.value,
+              d,
+              idx
+            )
+          "
+        />
+
+        <div class="bg-green-400 border p-1 m-1" v-if="d.type == 'const'">
+          {{ d.value }}
+        </div>
+        <div class="bg-yellow-400 border p-1 m-1" v-if="d.type == 'expr'">
+          {{ d.compute }}
+        </div>
+        <a class="whitespace-nowrap border p-1 m-1" href="#">expr</a>
+        <div>
+          <div class="border p-1 m-1" v-for="u in d.up" :key="u">
+            {{ u }}
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
+
+
+<script lang="ts">
+export default {
+  mounted() {},
+  setup() {},
+};
+</script>
 
 <style scoped>
 </style>
